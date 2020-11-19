@@ -1,0 +1,3 @@
+1) Caso um processo não tenha memória suficiente para executar em determinado momento, podemos movê-lo para o final da lista de prontos.
+2) Em realação à memória virtual, quanto melhor for trabalhado o conceito, melhor a nota. Mas a implementação pode ser "bem rudimentar".
+

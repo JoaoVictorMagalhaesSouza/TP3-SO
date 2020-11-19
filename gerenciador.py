@@ -8,15 +8,17 @@ import os
 
 class Memoria:
     def __init__(self):
-        self.tamMemoria: int = 15   
+        self.tamMemoria: int = 3   
         self.vetorMemoria: int = []
+        self.flagParaNext: int = None
         #FILE memoria virtual -> implementar depois
     def iniciaMemoria(self):
+        #self.vetorMemoria = [None,15,None,None,None,6,7,8,9,10,None,None,None,None,None]
         for i in range (self.tamMemoria): # Iniciando as posições de memória como válidas
             self.vetorMemoria.append(None)
+    
     def firstFit(self, numVariaveis: int):
         vetorIdeal = []
-        print("First fit")
         for i in range (numVariaveis):
             vetorIdeal.append(None) #O vetor ideal seria onde todas as posicoes estao livres
                                     #[None,None,None,...,None]
@@ -28,6 +30,31 @@ class Memoria:
                     return i
                 else:
                     continue
+    
+    def nextFit(self, numVariaveis: int):
+        vetorIdeal = []
+        for i in range (numVariaveis):
+            vetorIdeal.append(None)
+        if (self.flagParaNext == None):
+            for i in range (self.tamMemoria):
+                if (i+numVariaveis <=  self.tamMemoria):
+                    if (self.vetorMemoria[i:i+numVariaveis] == vetorIdeal): #o ultimo indice é exclusivo n entra
+                        self.flagParaNext = i + numVariaveis
+                        return i
+                    else:
+                        continue
+        else:
+            pontoDePartida = self.flagParaNext
+            print("Ponto de partida: ",pontoDePartida)
+            while (pontoDePartida < self.tamMemoria):
+                if (pontoDePartida+numVariaveis <= self.tamMemoria):
+                    if (self.vetorMemoria[pontoDePartida:pontoDePartida+numVariaveis] == vetorIdeal):
+                        self.flagParaNext = (pontoDePartida + numVariaveis) % self.tamMemoria  #Lista circular
+                        return pontoDePartida 
+                    else:
+                        pontoDePartida+=1
+            
+        
              
             
                     
@@ -54,6 +81,7 @@ class Cpu:
         self.EstadoExecucao = EstadoExecucao
         self.Tempo = Tempo
         self.memoria = Memoria
+        
     def recebe_processo(self, processo: Dict):
         self.pid = processo['pid']
         self.codigo_processo = processo['pscodigo']
@@ -163,7 +191,14 @@ class Cpu:
         self.tempo_cpu += 1
 
         if instrucao[0] == 'T':
+            
+            pos_ini = self.posicaoInicialMem
+            while (pos_ini < self.posicaoInicialMem+self.numeroVariaveis):
+                self.memoria.vetorMemoria[pos_ini] = None
+                pos_ini+=1
             self.troca_contexto(True, False)
+            
+
         elif instrucao[0] == 'B':
             self.troca_contexto(False, True)
         elif self.quantum == 0:
@@ -182,12 +217,13 @@ class Cpu:
             #self.memoria.append(None)
         print("Numero de variaveis: ",numero_de_variaveis)
         self.numeroVariaveis =  numero_de_variaveis
-        print("Self n: ",self.numeroVariaveis)
-        print(type(self.numeroVariaveis))
-        posicaoInicial = self.memoria.firstFit(self.numeroVariaveis)
+        #posicaoInicial = self.memoria.firstFit(self.numeroVariaveis) Aparentemente OK
+        posicaoInicial = self.memoria.nextFit(self.numeroVariaveis)
         print("Posicao inicial: ",posicaoInicial)
         if (posicaoInicial == None):
-            print("Não há memoria para esse processo") #Tratar dps
+            print("Não há memoria para esse processo") 
+            #Podemos escolher como fazer. Acho que a melhor forma seria mover o processo para a fila de prontos.
+
         else:
             self.posicaoInicialMem = posicaoInicial
 
