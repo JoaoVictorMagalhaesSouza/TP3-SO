@@ -163,7 +163,16 @@ class Cpu:
         self.tempo_cpu += 1
 
         if instrucao[0] == 'T':
+            print("Posicao inicial mem: ",self.posicaoInicialMem)
+            print("Numero de variaveis: ",self.numeroVariaveis)
+            pos_ini = self.posicaoInicialMem
+            while (pos_ini < self.posicaoInicialMem+self.numeroVariaveis):
+                print("self pos: ",self.posicaoInicialMem)
+                self.memoria.vetorMemoria[pos_ini] = None
+                pos_ini+=1
             self.troca_contexto(True, False)
+            
+
         elif instrucao[0] == 'B':
             self.troca_contexto(False, True)
         elif self.quantum == 0:
