@@ -8,7 +8,7 @@ import os
 
 class Memoria:
     def __init__(self):
-        self.tamMemoria: int = 2
+        self.tamMemoria: int = 3
         self.vetorMemoria: int = []
         self.flagParaNext: int = None
         # FILE memoria virtual -> implementar depois
@@ -164,6 +164,9 @@ class Cpu:
         sem_memoria = False
         # Recebe a instrucao atual
         if len(self.tabela_de_processos.processos) == 0:
+            print('Nada a executar')
+            return None
+        elif len(self.prontos) == 0 and len(self.bloqueados) > 0:
             print('Nada a executar')
             return None
 
