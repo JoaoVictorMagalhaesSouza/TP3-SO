@@ -6,7 +6,8 @@ class Memoria:
         # FILE memoria virtual -> implementar depois
 
     def iniciaMemoria(self):
-        self.vetorMemoria = [None,None,None,None,None,6,7,8,9,10,None,19,36,None,None]
+        self.vetorMemoria = [None, None, None, None, None,
+                             6, 7, 8, 9, 10, None, 19, 36, None, None]
         '''for i in range(self.tamMemoria):  # Iniciando as posições de memória como válidas
             self.vetorMemoria.append(None)'''
 
@@ -58,15 +59,15 @@ class Memoria:
                     pontoDePartida = (pontoDePartida+1) % self.tamMemoria
                     contadorMemoria += 1
 
-    def bestFit(self, numVariaveis:int):
+    def bestFit(self, numVariaveis: int):
         menorTamanho = 9999999999
         menorPosicao = 0
         contador = 0
         posicaoInicialJ = 0
         vetorIdeal = []
         primeiroJ = 0
-        
-        for i in range (numVariaveis):
+
+        for i in range(numVariaveis):
             vetorIdeal.append(None)
 
         i = 0
@@ -74,24 +75,46 @@ class Memoria:
             #print("i:  ",i)
             j = i
             primeiroJ = j
-            
+
             while (j < self.tamMemoria):
-                if (self.vetorMemoria[j]==None): #Começando a formar a sequencia de memoria vazia  [None,None,...,None]
-                    contador+=1
-                    j+=1
-                else:         #Ja nao da pra contar mais com essa posicao, entao vamos ver o que temos               
+                # Começando a formar a sequencia de memoria vazia  [None,None,...,None]
+                if (self.vetorMemoria[j] == None):
+                    contador += 1
+                    j += 1
+                else:  # Ja nao da pra contar mais com essa posicao, entao vamos ver o que temos
                     break
-            #Vendo o que temos:
-            if (contador==0): #Significa que nosso ponto de partida foi uma posicao de memoria ocupada
-                i+=1 #Entao so bora ver a posicao seguinte
-            
-            else: #Significa que nosso ponto de partida foi uma posicao vazia
-                #Se o numero de elementos da sequencia de memoria obtida é menor que o menor e,
-                #se esse numero de elementos cabe as variaveis que queremos armazenar.
-                if (contador < menorTamanho and contador >= numVariaveis): #Obtemos uma sequencia de memoria candidata a ser a melhor
-                        menorTamanho = contador
-                        menorPosicao = primeiroJ #Guardar a posicao de inicio da sequencia candidata
-                i += contador #Vamos verificar mais sequencias a partir do fim dessa então.
+            # Vendo o que temos:
+            if (contador == 0):  # Significa que nosso ponto de partida foi uma posicao de memoria ocupada
+                i += 1  # Entao so bora ver a posicao seguinte
+
+            else:  # Significa que nosso ponto de partida foi uma posicao vazia
+                # Se o numero de elementos da sequencia de memoria obtida é menor que o menor e,
+                # se esse numero de elementos cabe as variaveis que queremos armazenar.
+                # Obtemos uma sequencia de memoria candidata a ser a melhor
+                if (contador < menorTamanho and contador >= numVariaveis):
+                    menorTamanho = contador
+                    menorPosicao = primeiroJ  # Guardar a posicao de inicio da sequencia candidata
+                # Vamos verificar mais sequencias a partir do fim dessa então.
+                i += contador
                 contador = 0
-        print("Melhor posicao para ser inserido: ",menorPosicao)
+        print("Melhor posicao para ser inserido: ", menorPosicao)
         return menorPosicao
+
+    def fragmentos(self):
+        contador = 0
+        tipo_atual = self.vetorMemoria[0]
+        for unidade in self.vetorMemoria:  # quantifica as variações
+            if type(unidade) != type(tipo_atual):
+                contador += 1
+                tipo_atual = unidade
+
+        print('Contador', contador)
+        if contador % 2 != 0:  # impar
+            valor = (contador + 1)/2
+        else:
+            if self.vetorMemoria[0] == None:
+                valor = contador/2 + 1
+            else:
+                valor = contador/2
+
+        return valor

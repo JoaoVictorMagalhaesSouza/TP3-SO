@@ -7,7 +7,6 @@ import memoria
 # Estruturas de dados
 
 
-
 class Cpu:
     def __init__(self, EstadoBloqueado: List, TabelaDeProcessos: TabelaDeProcessos, EstadoPronto: List, EstadoExecucao: List, Tempo: List, Memoria: Memoria):
         self.pid: int
@@ -111,7 +110,7 @@ class Cpu:
             if self.EstadoExecucao[0] == None:
                 print('Nada a executar')
                 return None
-        print("PC: ",self.pc)
+        print("PC: ", self.pc)
         instrucao: str = self.codigo_processo[self.pc]
         print('\npid na cpu: ', self.pid)
         print('instrucao: ', instrucao)
@@ -332,7 +331,7 @@ def gerenciador(r):
         elif comando.decode() == 'L':
 
             # print(tabela_de_processos.processos) # Descomentar para detalhes
-            
+
             # 1) move o 1º processo da fila EstadoBloqueado para pronto
             print('EstadoBloqueado antes: ', EstadoBloqueado)
             if (len(EstadoBloqueado) > 0):
@@ -341,7 +340,7 @@ def gerenciador(r):
                 EstadoBloqueado.remove(primeiro_da_fila)
             print('EstadoBloqueado depois: ', EstadoBloqueado)
             if (cpu.EstadoExecucao[0] == None):
-                cpu.troca_contexto(False,True)
+                cpu.troca_contexto(False, True)
             print("\nComando L")
         elif comando.decode() == 'I' or comando.decode() == 'M':
             # 1) Dispara processo impressão (cria um fork() aqui)
@@ -365,6 +364,8 @@ def gerenciador(r):
                 print('\nTempo atual do sistema: ', Tempo[0])
                 print('PID do Processo em CPU: ', cpu.pid)
                 print('Quantum do processo em CPU: ', cpu.quantum)
+                print('Memória:', mem.vetorMemoria)
+                print('Numero de fragmentos: ', mem.fragmentos())
                 exit()
 
         if comando.decode() == 'M':
