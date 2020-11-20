@@ -44,7 +44,7 @@ class Memoria:
                 if (i+numVariaveis <= self.tamMemoria):
                     # o ultimo indice é exclusivo n entra
                     if (self.vetorMemoria[i:i+numVariaveis] == vetorIdeal):
-                        self.flagParaNext = i + numVariaveis
+                        self.flagParaNext = (i + numVariaveis) % self.tamMemoria
                         return i
                     else:
                         continue
@@ -59,10 +59,10 @@ class Memoria:
                             pontoDePartida + numVariaveis) % self.tamMemoria  # Lista circular
                         return pontoDePartida
                     else:
-                        pontoDePartida = pontoDePartida+1 % self.tamMemoria
+                        pontoDePartida = (pontoDePartida+1) % self.tamMemoria
                         contadorMemoria += 1
                 else:
-                    pontoDePartida = pontoDePartida+1 % self.tamMemoria
+                    pontoDePartida = (pontoDePartida+1) % self.tamMemoria
                     contadorMemoria+=1
             
             
