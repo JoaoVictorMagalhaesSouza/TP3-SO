@@ -44,7 +44,8 @@ class Memoria:
                 if (i+numVariaveis <= self.tamMemoria):
                     # o ultimo indice é exclusivo n entra
                     if (self.vetorMemoria[i:i+numVariaveis] == vetorIdeal):
-                        self.flagParaNext = (i + numVariaveis) % self.tamMemoria
+                        self.flagParaNext = (
+                            i + numVariaveis) % self.tamMemoria
                         return i
                     else:
                         continue
@@ -52,7 +53,7 @@ class Memoria:
             contadorMemoria = 0
             pontoDePartida = self.flagParaNext
             print("Ponto de partida: ", pontoDePartida)
-            while (contadorMemoria < self.tamMemoria): ##Varrer toda a memoria circular
+            while (contadorMemoria < self.tamMemoria):  # Varrer toda a memoria circular
                 if (pontoDePartida+numVariaveis <= self.tamMemoria):
                     if (self.vetorMemoria[pontoDePartida:pontoDePartida+numVariaveis] == vetorIdeal):
                         self.flagParaNext = (
@@ -63,9 +64,8 @@ class Memoria:
                         contadorMemoria += 1
                 else:
                     pontoDePartida = (pontoDePartida+1) % self.tamMemoria
-                    contadorMemoria+=1
-            
-            
+                    contadorMemoria += 1
+
 
 class Cpu:
     def __init__(self, EstadoBloqueado: List, TabelaDeProcessos: TabelaDeProcessos, EstadoPronto: List, EstadoExecucao: List, Tempo: List, Memoria: Memoria):
@@ -167,8 +167,9 @@ class Cpu:
             print('Nada a executar')
             return None
         elif len(self.prontos) == 0 and len(self.bloqueados) > 0:
-            print('Nada a executar')
-            return None
+            if self.EstadoExecucao[0] == None:
+                print('Nada a executar')
+                return None
 
         instrucao: str = self.codigo_processo[self.pc]
         print('\npid na cpu: ', self.pid)
@@ -271,7 +272,8 @@ class Cpu:
 
     def instrucao_T(self):
         # Deve excluir da tabela de processos
-        print('Processo terminado, Memória: ', self.memoria)
+        print('Processo terminado, Memória: ', self.memoria.vetorMemoria)
+        self.EstadoExecucao = [None]
         self.tabela_de_processos.termina_processo(self.pid)
         # Limpar a memória que ele tava usando
 
@@ -383,7 +385,7 @@ def gerenciador(r):
             # 3) incrementa Tempo ("Global")
             # 4) faz escalonamento: pode ou não envolver troca de contexto!
             cpu.executa()
-            print("Bloqueados: ",cpu.bloqueados)
+            print("Bloqueados: ", cpu.bloqueados)
             print("Memoria: ", cpu.memoria.vetorMemoria)
             Tempo[0] = Tempo[0] + 1
         elif comando.decode() == 'L':
