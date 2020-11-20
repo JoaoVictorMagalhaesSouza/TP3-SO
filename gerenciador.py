@@ -2,70 +2,11 @@ from __future__ import annotations
 from typing import List, Dict
 from copy import deepcopy
 import os
-
+import memoria
 
 # Estruturas de dados
 
-class Memoria:
-    def __init__(self):
-        self.tamMemoria: int = 3
-        self.vetorMemoria: int = []
-        self.flagParaNext: int = None
-        # FILE memoria virtual -> implementar depois
 
-    def iniciaMemoria(self):
-        #self.vetorMemoria = [None,15,None,None,None,6,7,8,9,10,None,None,None,None,None]
-        for i in range(self.tamMemoria):  # Iniciando as posições de memória como válidas
-            self.vetorMemoria.append(None)
-
-    def firstFit(self, numVariaveis: int):
-        vetorIdeal = []
-        for i in range(numVariaveis):
-            # O vetor ideal seria onde todas as posicoes estao livres
-            vetorIdeal.append(None)
-            # [None,None,None,...,None]
-
-        for i in range(self.tamMemoria):
-            if (i+numVariaveis <= self.tamMemoria):
-                # o ultimo indice é exclusivo n entra
-                if (self.vetorMemoria[i:i+numVariaveis] == vetorIdeal):
-                    return i
-                else:
-                    continue
-            else:
-                continue
-
-    def nextFit(self, numVariaveis: int):
-        vetorIdeal = []
-        for i in range(numVariaveis):
-            vetorIdeal.append(None)
-        if (self.flagParaNext == None):
-            for i in range(self.tamMemoria):
-                if (i+numVariaveis <= self.tamMemoria):
-                    # o ultimo indice é exclusivo n entra
-                    if (self.vetorMemoria[i:i+numVariaveis] == vetorIdeal):
-                        self.flagParaNext = (i + numVariaveis) % self.tamMemoria
-                        return i
-                    else:
-                        continue
-        else:
-            contadorMemoria = 0
-            pontoDePartida = self.flagParaNext
-            print("Ponto de partida: ", pontoDePartida)
-            while (contadorMemoria < self.tamMemoria): ##Varrer toda a memoria circular
-                if (pontoDePartida+numVariaveis <= self.tamMemoria):
-                    if (self.vetorMemoria[pontoDePartida:pontoDePartida+numVariaveis] == vetorIdeal):
-                        self.flagParaNext = (
-                            pontoDePartida + numVariaveis) % self.tamMemoria  # Lista circular
-                        return pontoDePartida
-                    else:
-                        pontoDePartida = (pontoDePartida+1) % self.tamMemoria
-                        contadorMemoria += 1
-                else:
-                    pontoDePartida = (pontoDePartida+1) % self.tamMemoria
-                    contadorMemoria+=1
-            
-            
 
 class Cpu:
     def __init__(self, EstadoBloqueado: List, TabelaDeProcessos: TabelaDeProcessos, EstadoPronto: List, EstadoExecucao: List, Tempo: List, Memoria: Memoria):
@@ -167,9 +108,10 @@ class Cpu:
             print('Nada a executar')
             return None
         elif len(self.prontos) == 0 and len(self.bloqueados) > 0:
-            print('Nada a executar')
-            return None
-
+            if self.EstadoExecucao[0] == None:
+                print('Nada a executar')
+                return None
+        print("PC: ",self.pc)
         instrucao: str = self.codigo_processo[self.pc]
         print('\npid na cpu: ', self.pid)
         print('instrucao: ', instrucao)
@@ -232,7 +174,7 @@ class Cpu:
         print("Numero de variaveis: ", numero_de_variaveis)
         self.numeroVariaveis = numero_de_variaveis
         # posicaoInicial = self.memoria.firstFit(self.numeroVariaveis) Aparentemente OK
-        posicaoInicial = self.memoria.nextFit(self.numeroVariaveis)
+        posicaoInicial = self.memoria.bestFit(self.numeroVariaveis)
         print("Posicao inicial: ", posicaoInicial)
         if (posicaoInicial == None):
             print("Não há memoria para esse processo")
@@ -271,7 +213,8 @@ class Cpu:
 
     def instrucao_T(self):
         # Deve excluir da tabela de processos
-        print('Processo terminado, Memória: ', self.memoria)
+        print('Processo terminado, Memória: ', self.memoria.vetorMemoria)
+        self.EstadoExecucao = [None]
         self.tabela_de_processos.termina_processo(self.pid)
         # Limpar a memória que ele tava usando
 
@@ -356,14 +299,14 @@ def gerenciador(r):
                                 'F 1', 'R file_d.txt', 'F 1', 'R file_e.txt', 'A 0 100', 'T']
 
     tabela_de_processos = TabelaDeProcessos()
-    memoria = Memoria()
-    memoria.iniciaMemoria()
+    mem = memoria.Memoria()
+    mem.iniciaMemoria()
     EstadoBloqueado = []
     EstadoPronto = []
     EstadoExecucao = [0]  # Colocar em vetor para passar como referência
     Tempo = [0]
     cpu = Cpu(EstadoBloqueado, tabela_de_processos,
-              EstadoPronto, EstadoExecucao, Tempo, memoria)
+              EstadoPronto, EstadoExecucao, Tempo, mem)
 
     # Ver a memoria aqui dps -> Guardar a posição de memória que ele começa e a qtde de variaveis
     tabela_de_processos.add_processo(
@@ -383,13 +326,13 @@ def gerenciador(r):
             # 3) incrementa Tempo ("Global")
             # 4) faz escalonamento: pode ou não envolver troca de contexto!
             cpu.executa()
-            print("Bloqueados: ",cpu.bloqueados)
+            print("Bloqueados: ", cpu.bloqueados)
             print("Memoria: ", cpu.memoria.vetorMemoria)
             Tempo[0] = Tempo[0] + 1
         elif comando.decode() == 'L':
 
             # print(tabela_de_processos.processos) # Descomentar para detalhes
-            print("\nComando U")
+            
             # 1) move o 1º processo da fila EstadoBloqueado para pronto
             print('EstadoBloqueado antes: ', EstadoBloqueado)
             if (len(EstadoBloqueado) > 0):
@@ -397,7 +340,8 @@ def gerenciador(r):
                 EstadoPronto.append(primeiro_da_fila)
                 EstadoBloqueado.remove(primeiro_da_fila)
             print('EstadoBloqueado depois: ', EstadoBloqueado)
-
+            if (cpu.EstadoExecucao[0] == None):
+                cpu.troca_contexto(False,True)
             print("\nComando L")
         elif comando.decode() == 'I' or comando.decode() == 'M':
             # 1) Dispara processo impressão (cria um fork() aqui)
