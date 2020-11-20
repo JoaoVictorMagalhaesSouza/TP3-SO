@@ -201,6 +201,8 @@ class Cpu:
             self.troca_contexto(True, False)
 
         elif (instrucao[0] == 'B') or sem_memoria:
+            if sem_memoria:
+                self.pc = 0
             self.troca_contexto(False, True)
         elif self.quantum == 0:
             self.prioridade += 1  # diminui prioridade
@@ -219,12 +221,12 @@ class Cpu:
         print("Numero de variaveis: ", numero_de_variaveis)
         self.numeroVariaveis = numero_de_variaveis
         # posicaoInicial = self.memoria.firstFit(self.numeroVariaveis) Aparentemente OK
-        posicaoInicial = self.memoria.nextFit(self.numeroVariaveis)
+        posicaoInicial = self.memoria.firstFit(self.numeroVariaveis)
         print("Posicao inicial: ", posicaoInicial)
         if (posicaoInicial == None):
             print("Não há memoria para esse processo")
             # Podemos escolher como fazer. Acho que a melhor forma seria mover o processo para a fila de prontos.
-            self.instrucao_B()
+            self.instrucao_B(instrucao)
             self.pc -= 1
             return True
 
@@ -338,7 +340,7 @@ def gerenciador(r):
      processo pai (controle)'''
 
     codigo_primeiro_simulado = ['N 2', 'D 0', 'D 1', 'V 0 1000', 'V 1 500', 'A 0 19',
-                                'A 0 20', 'S 1 53', 'A 1 55', 'F 1', 'R file_a.txt',
+                                'A 0 20', 'S 1 53', 'A 1 55', 'F 1', 'R file_a2.txt',
                                 'F 1', 'R file_b.txt', 'F 1', 'R file_c.txt',
                                 'F 1', 'R file_d.txt', 'F 1', 'R file_e.txt', 'A 0 100', 'T']
 
