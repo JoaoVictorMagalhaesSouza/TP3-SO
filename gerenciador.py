@@ -400,6 +400,9 @@ def gerenciador(r):
                 EstadoBloqueado.remove(primeiro_da_fila)
             print('EstadoBloqueado depois: ', EstadoBloqueado)
 
+            if cpu.EstadoExecucao[0] == None:
+                cpu.troca_contexto(False, True)
+
             print("\nComando L")
         elif comando.decode() == 'I' or comando.decode() == 'M':
             # 1) Dispara processo impressão (cria um fork() aqui)
