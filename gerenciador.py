@@ -383,10 +383,14 @@ def gerenciador(r):
                 posicaoInicial = mem.firstFit(numero_de_variaveis)
                 tabela_de_processos.set_posicaoInicialMem(
                     primeiro_da_fila, posicaoInicial)
+                # passagem efetiva dos valores para memória
+                for i in range(numero_de_variaveis):
+                    mem.vetorMemoria[posicaoInicial +
+                                     i] = Disco[posicao_no_disco + i]
 
                 # Atualizando posições iniciais no disco dos processo
                 # que continuam bloqueados, pois vai abir um gap
-                # [1,2,3,'4','5',6]
+                # [1,2,3,'4','5',6] --> [1,2,3,6]
                 for pid in EstadoBloqueado:  # cada i é um id
                     posicao = tabela_de_processos.get_posicaoInicialMem(pid)
                     if posicao > posicao_no_disco:
@@ -394,7 +398,7 @@ def gerenciador(r):
                             pid, numero_de_variaveis)
 
                 for i in range(numero_de_variaveis):
-                    del Disco[posicao_no_disco + i]
+                    del Disco[posicao_no_disco]
 
             print('EstadoBloqueado depois: ', EstadoBloqueado)
             if (cpu.EstadoExecucao[0] == None):
