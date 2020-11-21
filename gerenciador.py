@@ -393,6 +393,9 @@ def gerenciador(r):
                         tabela_de_processos.diminui_posicao_no_disco(
                             pid, numero_de_variaveis)
 
+                for i in numero_de_variaveis:
+                    del Disco[posicao_no_disco + i]
+
             print('EstadoBloqueado depois: ', EstadoBloqueado)
             if (cpu.EstadoExecucao[0] == None):
                 cpu.troca_contexto(False, True)
