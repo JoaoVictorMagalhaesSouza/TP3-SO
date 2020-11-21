@@ -1,0 +1,14 @@
+Lugares mexidos:
+CPU: 	coloquei o Disco (Lista) como atributo.
+	instrucao_B: implementei a ida das variaveis para o disco.
+
+Tabela de processos:
+	Coloquei 4 últimos métodos lá, para auxiliar na entrada "L".
+
+elif comando.decode() == 'L':
+	Coloquei 2 comentários de códigos, onde abaixo de cada tem as 
+	implementações relativas, sendo elas:
+	# Retirando do disco e passando para memoria; e
+	# Atualizando posições iniciais no disco dos processo que continuam bloqueados
+
+	

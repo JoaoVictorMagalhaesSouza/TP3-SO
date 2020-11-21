@@ -8,7 +8,7 @@ import memoria
 
 
 class Cpu:
-    def __init__(self, EstadoBloqueado: List, TabelaDeProcessos: TabelaDeProcessos, EstadoPronto: List, EstadoExecucao: List, Tempo: List, Memoria: Memoria):
+    def __init__(self, EstadoBloqueado: List, TabelaDeProcessos: TabelaDeProcessos, EstadoPronto: List, EstadoExecucao: List, Tempo: List, Memoria: Memoria, Disco: List):
         self.pid: int
         self.codigo_processo: List
         self.pc: int
@@ -29,10 +29,10 @@ class Cpu:
         self.EstadoExecucao = EstadoExecucao
         self.Tempo = Tempo
         self.memoria = Memoria
+        self.Disco = Disco
         # atributos de estatistica
         self.requisicao_memoria = 0
         self.requisicao_negada = 0
-        
 
     def recebe_processo(self, processo: Dict):
         self.pid = processo['pid']
@@ -217,9 +217,14 @@ class Cpu:
 
     def instrucao_B(self, instrucao: str):
         self.bloqueados.append(self.pid)
+        posicao_inicial = len(self.Disco)
+
+        # joga no disco e tira da memória
         for i in range(self.memoria.tamMemoria):
             if (i >= self.posicaoInicialMem and i < self.posicaoInicialMem+self.numeroVariaveis):
+                self.Disco.append(self.memoria.vetorMemoria[i])
                 self.memoria.vetorMemoria[i] = None
+        self.posicaoInicialMem = posicao_inicial
 
     def instrucao_T(self):
         # Deve excluir da tabela de processos
@@ -298,6 +303,24 @@ class TabelaDeProcessos:
     def get_maior_pid(self):
         return self.maior_pid
 
+    def get_nVariaveis(self, pid: int):
+        # fazer mais protegido a erros depois
+        processo = self.achar_processo_pid(pid)
+        return processo['nVariaveis']
+
+    def set_posicaoInicialMem(self, pid: int, posicao: int):
+        processo = self.achar_processo_pid(pid)
+        processo['posicaoInicialMem'] = posicao
+
+    def get_posicaoInicialMem(self, pid):
+        processo = self.achar_processo_pid(pid)
+        return processo['posicaoInicialMem']
+
+    def diminui_posicao_no_disco(self, id: int, unidades: int):
+        # recebe quantas unidades no disco a posição altera
+        processo = self.achar_processo_pid(pid)
+        process['posicaoInicialMem'] -= unidades
+
 
 def gerenciador(r):
     ''' Pre-requisitos - antes de entrar no while que troca informações com
@@ -311,12 +334,13 @@ def gerenciador(r):
     tabela_de_processos = TabelaDeProcessos()
     mem = memoria.Memoria()
     mem.iniciaMemoria()
+    Disco = []
     EstadoBloqueado = []
     EstadoPronto = []
     EstadoExecucao = [0]  # Colocar em vetor para passar como referência
     Tempo = [0]
     cpu = Cpu(EstadoBloqueado, tabela_de_processos,
-              EstadoPronto, EstadoExecucao, Tempo, mem)
+              EstadoPronto, EstadoExecucao, Tempo, mem, Disco)
 
     # Ver a memoria aqui dps -> Guardar a posição de memória que ele começa e a qtde de variaveis
     tabela_de_processos.add_processo(
@@ -340,7 +364,9 @@ def gerenciador(r):
             print("Memoria: ", cpu.memoria.vetorMemoria)
             Tempo[0] = Tempo[0] + 1
         elif comando.decode() == 'L':
-
+            posicao_no_disco: int
+            posicaoInicial: int
+            numero_de_variaveis: int
             # print(tabela_de_processos.processos) # Descomentar para detalhes
 
             # 1) move o 1º processo da fila EstadoBloqueado para pronto
@@ -349,6 +375,23 @@ def gerenciador(r):
                 primeiro_da_fila = EstadoBloqueado[0]
                 EstadoPronto.append(primeiro_da_fila)
                 EstadoBloqueado.remove(primeiro_da_fila)
+                # Retirando do disco e passando para memoria
+                posicao_no_disco = tabela_de_processos.get_posicaoInicialMem()
+                numero_de_variaveis = tabela_de_processos.get_nVariaveis(
+                    primeiro_da_fila)
+                posicaoInicial = mem.firstFit(numero_de_variaveis)
+                tabela_de_processos.set_posicaoInicialMem(
+                    primeiro_da_fila, posicaoInicial)
+
+                # Atualizando posições iniciais no disco dos processo
+                # que continuam bloqueados, pois vai abir um gap
+                # [1,2,3,'4','5',6]
+                for pid in EstadoBloqueado:  # cada i é um id
+                    posicao = tabela_de_processos.get_posicaoInicialMem(pid)
+                    if posicao > posicao_no_disco:
+                        tabela_de_processos.diminui_posicao_no_disco(
+                            pid, numero_de_variaveis)
+
             print('EstadoBloqueado depois: ', EstadoBloqueado)
             if (cpu.EstadoExecucao[0] == None):
                 cpu.troca_contexto(False, True)
@@ -379,7 +422,9 @@ def gerenciador(r):
                 print('Numero de fragmentos: ', mem.fragmentos())
                 print('Percentual de requisição negada: ',
                       cpu.requisicao_negada/cpu.requisicao_memoria)
-                print('Media de alocação: ',mem.numeroNos/cpu.requisicao_memoria)
+                print('Media de alocação: ',
+                      mem.numeroNos/cpu.requisicao_memoria)
+                print('Disco: ', Disco)
                 exit()
 
         if comando.decode() == 'M':
