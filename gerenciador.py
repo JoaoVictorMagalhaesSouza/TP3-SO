@@ -29,6 +29,9 @@ class Cpu:
         self.EstadoExecucao = EstadoExecucao
         self.Tempo = Tempo
         self.memoria = Memoria
+        # atributos de estatistica
+        self.requisicao_memoria = 0
+        self.requisicao_negada = 0
 
     def recebe_processo(self, processo: Dict):
         self.pid = processo['pid']
@@ -166,6 +169,7 @@ class Cpu:
         print('quantum: ', self.quantum)
 
     def instrucao_N(self, instrucao: str):
+        self.requisicao_memoria += 1
         numero_de_variaveis = int(instrucao[2])
         # for i in range(numero_de_variaveis):
         # ex: 3 variáveis teríamos [None, None, None]
@@ -180,6 +184,7 @@ class Cpu:
             # Podemos escolher como fazer. Acho que a melhor forma seria mover o processo para a fila de bloqueados.
             self.instrucao_B(instrucao)
             self.pc -= 1
+            self.requisicao_negada += 1
             return True
 
         else:
@@ -207,12 +212,12 @@ class Cpu:
         valor = int(instrucao[4:])  # Valor a ser subtraído
         self.memoria.vetorMemoria[posicao] -= valor
 
-    #Dar uma olhada aqui dps:
+    # Dar uma olhada aqui dps:
 
     def instrucao_B(self, instrucao: str):
         self.bloqueados.append(self.pid)
         for i in range(self.memoria.tamMemoria):
-            if (i>= self.posicaoInicialMem and i< self.posicaoInicialMem+self.numeroVariaveis):
+            if (i >= self.posicaoInicialMem and i < self.posicaoInicialMem+self.numeroVariaveis):
                 self.memoria.vetorMemoria[i] = None
 
     def instrucao_T(self):
@@ -371,6 +376,8 @@ def gerenciador(r):
                 print('Quantum do processo em CPU: ', cpu.quantum)
                 print('Memória:', mem.vetorMemoria)
                 print('Numero de fragmentos: ', mem.fragmentos())
+                print('Percentual de requisição negada: ',
+                      cpu.requisicao_negada/cpu.requisicao_memoria)
                 exit()
 
         if comando.decode() == 'M':
