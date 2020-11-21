@@ -312,11 +312,11 @@ class TabelaDeProcessos:
         processo = self.achar_processo_pid(pid)
         processo['posicaoInicialMem'] = posicao
 
-    def get_posicaoInicialMem(self, pid):
+    def get_posicaoInicialMem(self, pid: int):
         processo = self.achar_processo_pid(pid)
         return processo['posicaoInicialMem']
 
-    def diminui_posicao_no_disco(self, id: int, unidades: int):
+    def diminui_posicao_no_disco(self, pid: int, unidades: int):
         # recebe quantas unidades no disco a posição altera
         processo = self.achar_processo_pid(pid)
         process['posicaoInicialMem'] -= unidades
@@ -376,7 +376,8 @@ def gerenciador(r):
                 EstadoPronto.append(primeiro_da_fila)
                 EstadoBloqueado.remove(primeiro_da_fila)
                 # Retirando do disco e passando para memoria
-                posicao_no_disco = tabela_de_processos.get_posicaoInicialMem()
+                posicao_no_disco = tabela_de_processos.get_posicaoInicialMem(
+                    primeiro_da_fila)
                 numero_de_variaveis = tabela_de_processos.get_nVariaveis(
                     primeiro_da_fila)
                 posicaoInicial = mem.firstFit(numero_de_variaveis)
