@@ -7,10 +7,10 @@ class Memoria:
         # FILE memoria virtual -> implementar depois
 
     def iniciaMemoria(self):
-        '''self.vetorMemoria = [None, None, None, None, None,
-                             6, 7, 8, 9, 10, None, 19, 36, None, None]'''
-        self.vetorMemoria = [None, None, None, 4, 5,
-                             6, 7, 8, 9, 10, None, 19, 36, 39, None]
+        self.vetorMemoria = [None, None, None, None, None,
+                             6, 7, 8, 9, 10, None, 19, 36, None, None]
+        '''self.vetorMemoria = [None, None, None, 4, 5,
+                             6, 7, 8, 9, 10, None, 19, 36, 39, None]'''
         '''for i in range(self.tamMemoria):  # Iniciando as posições de memória como válidas
             self.vetorMemoria.append(None)'''
 

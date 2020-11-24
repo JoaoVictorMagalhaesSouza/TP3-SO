@@ -365,6 +365,7 @@ def gerenciador(r):
             print("Memoria: ", cpu.memoria.vetorMemoria)
             Tempo[0] = Tempo[0] + 1
         elif comando.decode() == 'L':
+            print('Disco antes: ', Disco)
             posicao_no_disco: int
             posicaoInicial: int
             numero_de_variaveis: int
@@ -407,6 +408,7 @@ def gerenciador(r):
             print('EstadoBloqueado depois: ', EstadoBloqueado)
             if (cpu.EstadoExecucao[0] == None):
                 cpu.troca_contexto(False, True)
+            print('Disco depois: ', Disco)
             print("\nComando L")
         elif comando.decode() == 'I' or comando.decode() == 'M':
             # 1) Dispara processo impressão (cria um fork() aqui)
