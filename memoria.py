@@ -7,8 +7,10 @@ class Memoria:
         # FILE memoria virtual -> implementar depois
 
     def iniciaMemoria(self):
-        self.vetorMemoria = [None, None, None, None, None,
-                             6, 7, 8, 9, 10, None, 19, 36, None, None]
+        '''self.vetorMemoria = [None, None, None, None, None,
+                             6, 7, 8, 9, 10, None, 19, 36, None, None]'''
+        self.vetorMemoria = [None, None, None, 4, 5,
+                             6, 7, 8, 9, 10, None, 19, 36, 39, None]
         '''for i in range(self.tamMemoria):  # Iniciando as posições de memória como válidas
             self.vetorMemoria.append(None)'''
 
@@ -16,12 +18,12 @@ class Memoria:
         vetorIdeal = []
         for i in range(numVariaveis):
             # O vetor ideal seria onde todas as posicoes estao livres
-            
+
             vetorIdeal.append(None)
             # [None,None,None,...,None]
 
         for i in range(self.tamMemoria):
-            self.numeroNos +=1
+            self.numeroNos += 1
             if (i+numVariaveis <= self.tamMemoria):
                 # o ultimo indice é exclusivo n entra
                 if (self.vetorMemoria[i:i+numVariaveis] == vetorIdeal):
@@ -37,7 +39,7 @@ class Memoria:
             vetorIdeal.append(None)
         if (self.flagParaNext == None):
             for i in range(self.tamMemoria):
-                self.numeroNos +=1
+                self.numeroNos += 1
                 if (i+numVariaveis <= self.tamMemoria):
                     # o ultimo indice é exclusivo n entra
                     if (self.vetorMemoria[i:i+numVariaveis] == vetorIdeal):
@@ -51,7 +53,7 @@ class Memoria:
             pontoDePartida = self.flagParaNext
             print("Ponto de partida: ", pontoDePartida)
             while (contadorMemoria < self.tamMemoria):  # Varrer toda a memoria circular
-                self.numeroNos +=1
+                self.numeroNos += 1
                 if (pontoDePartida+numVariaveis <= self.tamMemoria):
                     if (self.vetorMemoria[pontoDePartida:pontoDePartida+numVariaveis] == vetorIdeal):
                         self.flagParaNext = (
@@ -77,7 +79,7 @@ class Memoria:
 
         i = 0
         while (i < self.tamMemoria):
-            self.numeroNos +=1
+            self.numeroNos += 1
             #print("i:  ",i)
             j = i
             primeiroJ = j
@@ -106,44 +108,44 @@ class Memoria:
         print("Melhor posicao para ser inserido: ", menorPosicao)
         return menorPosicao
 
-    def worstFit(self, numVariaveis:int ):
+    def worstFit(self, numVariaveis: int):
         maiorTam = -99999999
         menorPosicao = 0
         contador = 0
         posicaoInicialJ = 0
         vetorIdeal = []
         primeiroJ = 0
-        for i in range (numVariaveis):
+        for i in range(numVariaveis):
             vetorIdeal.append(None)
 
         i = 0
         while (i < self.tamMemoria):
-            self.numeroNos +=1
-            print("i:  ",i)
-            print("Maior: ",maiorTam)
+            self.numeroNos += 1
+            print("i:  ", i)
+            print("Maior: ", maiorTam)
             j = i
             primeiroJ = j
             while (j < self.tamMemoria):
-                if (self.vetorMemoria[j]==None): 
-                    contador+=1
-                    j+=1
-                else:                        
+                if (self.vetorMemoria[j] == None):
+                    contador += 1
+                    j += 1
+                else:
                     break
-            
+
             #print("Contador: ",contador)
-            if (contador==0): 
-                i+=1 
-                
-            else: 
-                if (contador > maiorTam and contador >= numVariaveis): 
+            if (contador == 0):
+                i += 1
+
+            else:
+                if (contador > maiorTam and contador >= numVariaveis):
                     maiorTam = contador
-                    menorPosicao = primeiroJ 
-                i += contador 
+                    menorPosicao = primeiroJ
+                i += contador
                 contador = 0
-                
-        print("Melhor posicao para ser inserido: ",menorPosicao)
+
+        print("Melhor posicao para ser inserido: ", menorPosicao)
         return menorPosicao
-    
+
     def fragmentos(self):
         contador = 0
         tipo_atual = self.vetorMemoria[0]

@@ -220,11 +220,12 @@ class Cpu:
         posicao_inicial = len(self.Disco)
 
         # joga no disco e tira da memória
-        for i in range(self.memoria.tamMemoria):
-            if (i >= self.posicaoInicialMem and i < self.posicaoInicialMem+self.numeroVariaveis):
-                self.Disco.append(self.memoria.vetorMemoria[i])
-                self.memoria.vetorMemoria[i] = None
-        self.posicaoInicialMem = posicao_inicial
+        if self.posicaoInicialMem != None:
+            for i in range(self.memoria.tamMemoria):
+                if (i >= self.posicaoInicialMem and i < self.posicaoInicialMem+self.numeroVariaveis):
+                    self.Disco.append(self.memoria.vetorMemoria[i])
+                    self.memoria.vetorMemoria[i] = None
+            self.posicaoInicialMem = posicao_inicial
 
     def instrucao_T(self):
         # Deve excluir da tabela de processos
@@ -375,30 +376,33 @@ def gerenciador(r):
                 primeiro_da_fila = EstadoBloqueado[0]
                 EstadoPronto.append(primeiro_da_fila)
                 EstadoBloqueado.remove(primeiro_da_fila)
-                # Retirando do disco e passando para memoria
-                posicao_no_disco = tabela_de_processos.get_posicaoInicialMem(
-                    primeiro_da_fila)
-                numero_de_variaveis = tabela_de_processos.get_nVariaveis(
-                    primeiro_da_fila)
-                posicaoInicial = mem.firstFit(numero_de_variaveis)
-                tabela_de_processos.set_posicaoInicialMem(
-                    primeiro_da_fila, posicaoInicial)
-                # passagem efetiva dos valores para memória
-                for i in range(numero_de_variaveis):
-                    mem.vetorMemoria[posicaoInicial +
-                                     i] = Disco[posicao_no_disco + i]
+                # caso não tenha nada para passar para memória
+                if tabela_de_processos.get_posicaoInicialMem(primeiro_da_fila) != None:
+                    # Retirando do disco e passando para memoria
+                    posicao_no_disco = tabela_de_processos.get_posicaoInicialMem(
+                        primeiro_da_fila)
+                    numero_de_variaveis = tabela_de_processos.get_nVariaveis(
+                        primeiro_da_fila)
+                    posicaoInicial = mem.firstFit(numero_de_variaveis)
+                    tabela_de_processos.set_posicaoInicialMem(
+                        primeiro_da_fila, posicaoInicial)
+                    # passagem efetiva dos valores para memória
+                    for i in range(numero_de_variaveis):
+                        mem.vetorMemoria[posicaoInicial +
+                                         i] = Disco[posicao_no_disco + i]
 
-                # Atualizando posições iniciais no disco dos processo
-                # que continuam bloqueados, pois vai abir um gap
-                # [1,2,3,'4','5',6] --> [1,2,3,6]
-                for pid in EstadoBloqueado:  # cada i é um id
-                    posicao = tabela_de_processos.get_posicaoInicialMem(pid)
-                    if posicao > posicao_no_disco:
-                        tabela_de_processos.diminui_posicao_no_disco(
-                            pid, numero_de_variaveis)
+                    # Atualizando posições iniciais no disco dos processo
+                    # que continuam bloqueados, pois vai abir um gap
+                    # [1,2,3,'4','5',6] --> [1,2,3,6]
+                    for pid in EstadoBloqueado:  # cada i é um id
+                        posicao = tabela_de_processos.get_posicaoInicialMem(
+                            pid)
+                        if posicao > posicao_no_disco:
+                            tabela_de_processos.diminui_posicao_no_disco(
+                                pid, numero_de_variaveis)
 
-                for i in range(numero_de_variaveis):
-                    del Disco[posicao_no_disco]
+                    for i in range(numero_de_variaveis):
+                        del Disco[posicao_no_disco]
 
             print('EstadoBloqueado depois: ', EstadoBloqueado)
             if (cpu.EstadoExecucao[0] == None):
