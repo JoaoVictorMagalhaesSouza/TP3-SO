@@ -448,7 +448,7 @@ def gerenciador(r):
 
                         for i in range(numero_de_variaveis):
                             del Disco[posicao_no_disco]
-                else:
+                elif tabela_de_processos.get_posicaoInicialMem(primeiro_da_fila) == None and (not tabela_de_processos.get_virtual(primeiro_da_fila)):
                     numero_de_variaveis = tabela_de_processos.get_nVariaveis(
                         primeiro_da_fila)
                     posicaoInicial = mem.firstFit(numero_de_variaveis)
