@@ -7,7 +7,7 @@ class Memoria:
         # FILE memoria virtual -> implementar depois
 
     def iniciaMemoria(self):
-        self.vetorMemoria = [None, None, None]
+        self.vetorMemoria = [None, None]
         '''self.vetorMemoria = [None, None, None, None, None,
                              6, 7, 8, 9, 10, None, 19, 36, None, None]'''
         '''self.vetorMemoria = [None, None, None, 4, 5,
