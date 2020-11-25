@@ -190,6 +190,8 @@ class Cpu:
 
         else:
             self.posicaoInicialMem = posicaoInicial
+            for i in range(numero_de_variaveis):
+                self.memoria.vetorMemoria[i + self.posicaoInicialMem] = 'a'
 
     def instrucao_D(self, instrucao: str):
         # Ex: Se a posicao inicial for daquele processo 0 e houverem 2 variaveis, então essas variaveis irão ocupar as posições 0+0 e 0+1 da memória
@@ -320,7 +322,7 @@ class TabelaDeProcessos:
     def diminui_posicao_no_disco(self, pid: int, unidades: int):
         # recebe quantas unidades no disco a posição altera
         processo = self.achar_processo_pid(pid)
-        process['posicaoInicialMem'] -= unidades
+        processo['posicaoInicialMem'] -= unidades
 
 
 def gerenciador(r):
@@ -385,25 +387,38 @@ def gerenciador(r):
                     numero_de_variaveis = tabela_de_processos.get_nVariaveis(
                         primeiro_da_fila)
                     posicaoInicial = mem.firstFit(numero_de_variaveis)
-                    tabela_de_processos.set_posicaoInicialMem(
-                        primeiro_da_fila, posicaoInicial)
-                    # passagem efetiva dos valores para memória
-                    for i in range(numero_de_variaveis):
-                        mem.vetorMemoria[posicaoInicial +
-                                         i] = Disco[posicao_no_disco + i]
+                    print('PosicaoIniciao:', posicaoInicial)
+                    if (posicaoInicial == None):
+                        EstadoPronto.remove(primeiro_da_fila)
+                        EstadoBloqueado.append(primeiro_da_fila)
+                    else:
+                        tabela_de_processos.set_posicaoInicialMem(
+                            primeiro_da_fila, posicaoInicial)
+                        # passagem efetiva dos valores para memória
+                        for i in range(numero_de_variaveis):
+                            mem.vetorMemoria[posicaoInicial +
+                                             i] = Disco[posicao_no_disco + i]
 
-                    # Atualizando posições iniciais no disco dos processo
-                    # que continuam bloqueados, pois vai abir um gap
-                    # [1,2,3,'4','5',6] --> [1,2,3,6]
-                    for pid in EstadoBloqueado:  # cada i é um id
-                        posicao = tabela_de_processos.get_posicaoInicialMem(
-                            pid)
-                        if posicao > posicao_no_disco:
-                            tabela_de_processos.diminui_posicao_no_disco(
-                                pid, numero_de_variaveis)
+                        # Atualizando posições iniciais no disco dos processo
+                        # que continuam bloqueados, pois vai abir um gap
+                        # [1,2,3,'4','5',6] --> [1,2,3,6]
+                        for pid in EstadoBloqueado:  # cada i é um id
+                            posicao = tabela_de_processos.get_posicaoInicialMem(
+                                pid)
+                            if posicao > posicao_no_disco:
+                                tabela_de_processos.diminui_posicao_no_disco(
+                                    pid, numero_de_variaveis)
 
-                    for i in range(numero_de_variaveis):
-                        del Disco[posicao_no_disco]
+                        for i in range(numero_de_variaveis):
+                            del Disco[posicao_no_disco]
+                else:
+                    numero_de_variaveis = tabela_de_processos.get_nVariaveis(
+                        primeiro_da_fila)
+                    posicaoInicial = mem.firstFit(numero_de_variaveis)
+                    print('PosicaoIniciao:', posicaoInicial)
+                    if (posicaoInicial == None):
+                        EstadoPronto.remove(primeiro_da_fila)
+                        EstadoBloqueado.append(primeiro_da_fila)
 
             print('EstadoBloqueado depois: ', EstadoBloqueado)
             if (cpu.EstadoExecucao[0] == None):
