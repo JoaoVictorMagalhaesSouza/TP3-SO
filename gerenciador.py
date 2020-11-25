@@ -156,7 +156,7 @@ class Cpu:
         if instrucao[0] == 'T':
             # Limpando memória?
             pos_ini = self.posicaoInicialMem
-            if (not self.tarefaB):
+            if (not self.virtual):
                 while (pos_ini < self.posicaoInicialMem+self.numeroVariaveis):
                     self.memoria.vetorMemoria[pos_ini] = None
                     pos_ini += 1
@@ -250,7 +250,7 @@ class Cpu:
         self.EstadoExecucao = [None]
 
         # joga no disco e tira da memória
-        if (self.posicaoInicialMem != None) and (not self.tarefaB):
+        if (self.posicaoInicialMem != None and not self.virtual):
             for i in range(self.memoria.tamMemoria):
                 if (i >= self.posicaoInicialMem and i < self.posicaoInicialMem+self.numeroVariaveis):
                     self.Disco.append(self.memoria.vetorMemoria[i])
@@ -354,6 +354,10 @@ class TabelaDeProcessos:
         processo = self.achar_processo_pid(pid)
         processo['posicaoInicialMem'] -= unidades
 
+    def get_virtual(self, pid: int):
+        processo = self.achar_processo_pid(pid)
+        return processo['virtual']
+
 
 def gerenciador(r):
     ''' Pre-requisitos - antes de entrar no while que troca informações com
@@ -413,7 +417,7 @@ def gerenciador(r):
                 EstadoPronto.append(primeiro_da_fila)
                 EstadoBloqueado.remove(primeiro_da_fila)
                 # caso não tenha nada para passar para memória
-                if tabela_de_processos.get_posicaoInicialMem(primeiro_da_fila) != None:
+                if tabela_de_processos.get_posicaoInicialMem(primeiro_da_fila) != None and (not tabela_de_processos.get_virtual(primeiro_da_fila)):
                     # Retirando do disco e passando para memoria
                     posicao_no_disco = tabela_de_processos.get_posicaoInicialMem(
                         primeiro_da_fila)
