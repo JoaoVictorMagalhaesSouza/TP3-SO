@@ -2,73 +2,13 @@ from __future__ import annotations
 from typing import List, Dict
 from copy import deepcopy
 import os
-
+import memoria
 
 # Estruturas de dados
 
-class Memoria:
-    def __init__(self):
-        self.tamMemoria: int = 3
-        self.vetorMemoria: int = []
-        self.flagParaNext: int = None
-        # FILE memoria virtual -> implementar depois
-
-    def iniciaMemoria(self):
-        #self.vetorMemoria = [None,15,None,None,None,6,7,8,9,10,None,None,None,None,None]
-        for i in range(self.tamMemoria):  # Iniciando as posições de memória como válidas
-            self.vetorMemoria.append(None)
-
-    def firstFit(self, numVariaveis: int):
-        vetorIdeal = []
-        for i in range(numVariaveis):
-            # O vetor ideal seria onde todas as posicoes estao livres
-            vetorIdeal.append(None)
-            # [None,None,None,...,None]
-
-        for i in range(self.tamMemoria):
-            if (i+numVariaveis <= self.tamMemoria):
-                # o ultimo indice é exclusivo n entra
-                if (self.vetorMemoria[i:i+numVariaveis] == vetorIdeal):
-                    return i
-                else:
-                    continue
-            else:
-                continue
-
-    def nextFit(self, numVariaveis: int):
-        vetorIdeal = []
-        for i in range(numVariaveis):
-            vetorIdeal.append(None)
-        if (self.flagParaNext == None):
-            for i in range(self.tamMemoria):
-                if (i+numVariaveis <= self.tamMemoria):
-                    # o ultimo indice é exclusivo n entra
-                    if (self.vetorMemoria[i:i+numVariaveis] == vetorIdeal):
-                        self.flagParaNext = (i + numVariaveis) % self.tamMemoria
-                        return i
-                    else:
-                        continue
-        else:
-            contadorMemoria = 0
-            pontoDePartida = self.flagParaNext
-            print("Ponto de partida: ", pontoDePartida)
-            while (contadorMemoria < self.tamMemoria): ##Varrer toda a memoria circular
-                if (pontoDePartida+numVariaveis <= self.tamMemoria):
-                    if (self.vetorMemoria[pontoDePartida:pontoDePartida+numVariaveis] == vetorIdeal):
-                        self.flagParaNext = (
-                            pontoDePartida + numVariaveis) % self.tamMemoria  # Lista circular
-                        return pontoDePartida
-                    else:
-                        pontoDePartida = (pontoDePartida+1) % self.tamMemoria
-                        contadorMemoria += 1
-                else:
-                    pontoDePartida = (pontoDePartida+1) % self.tamMemoria
-                    contadorMemoria+=1
-            
-            
 
 class Cpu:
-    def __init__(self, EstadoBloqueado: List, TabelaDeProcessos: TabelaDeProcessos, EstadoPronto: List, EstadoExecucao: List, Tempo: List, Memoria: Memoria):
+    def __init__(self, EstadoBloqueado: List, TabelaDeProcessos: TabelaDeProcessos, EstadoPronto: List, EstadoExecucao: List, Tempo: List, Memoria: Memoria, Disco: List, MemoriaVirtual: List):
         self.pid: int
         self.codigo_processo: List
         self.pc: int
@@ -89,6 +29,14 @@ class Cpu:
         self.EstadoExecucao = EstadoExecucao
         self.Tempo = Tempo
         self.memoria = Memoria
+        self.Disco = Disco
+        # Memória virtual
+        self.MemoriaVirtual = MemoriaVirtual
+        self.virtual = False
+        self.tarefaB = False
+        # atributos de estatistica
+        self.requisicao_memoria = 0
+        self.requisicao_negada = 0
 
     def recebe_processo(self, processo: Dict):
         self.pid = processo['pid']
@@ -102,6 +50,7 @@ class Cpu:
         self.quantum = 2**processo['prioridade']
         self.numeroVariaveis = processo['nVariaveis']
         self.posicaoInicialMem = processo['posicaoInicialMem']
+        self.virtual = processo['virtual']
 
     def define_quantum(self):
         self.quantum = 2**self.prioridade
@@ -113,7 +62,7 @@ class Cpu:
         self.tabela_de_processos.atualizar_processo(
             self.pid, self.pc, self.codigo_processo, self.ppid,
             self.prioridade, self.tempo_inicio, self.tempo_cpu,
-            self.numeroVariaveis, self.posicaoInicialMem
+            self.numeroVariaveis, self.posicaoInicialMem, self.virtual
         )
 
     def escalonadorFIFO(self):
@@ -167,9 +116,10 @@ class Cpu:
             print('Nada a executar')
             return None
         elif len(self.prontos) == 0 and len(self.bloqueados) > 0:
-            print('Nada a executar')
-            return None
-
+            if self.EstadoExecucao[0] == None:
+                print('Nada a executar')
+                return None
+        print("PC: ", self.pc)
         instrucao: str = self.codigo_processo[self.pc]
         print('\npid na cpu: ', self.pid)
         print('instrucao: ', instrucao)
@@ -206,9 +156,14 @@ class Cpu:
         if instrucao[0] == 'T':
             # Limpando memória?
             pos_ini = self.posicaoInicialMem
-            while (pos_ini < self.posicaoInicialMem+self.numeroVariaveis):
-                self.memoria.vetorMemoria[pos_ini] = None
-                pos_ini += 1
+            if (not self.virtual):
+                while (pos_ini < self.posicaoInicialMem+self.numeroVariaveis):
+                    self.memoria.vetorMemoria[pos_ini] = None
+                    pos_ini += 1
+            else:
+                for i in range(self.numeroVariaveis):
+                    self.MemoriaVirtual[i + self.posicaoInicialMem] = None
+
             self.troca_contexto(True, False)
 
         elif (instrucao[0] == 'B') or sem_memoria:
@@ -225,6 +180,7 @@ class Cpu:
         print('quantum: ', self.quantum)
 
     def instrucao_N(self, instrucao: str):
+        self.requisicao_memoria += 1
         numero_de_variaveis = int(instrucao[2])
         # for i in range(numero_de_variaveis):
         # ex: 3 variáveis teríamos [None, None, None]
@@ -232,46 +188,79 @@ class Cpu:
         print("Numero de variaveis: ", numero_de_variaveis)
         self.numeroVariaveis = numero_de_variaveis
         # posicaoInicial = self.memoria.firstFit(self.numeroVariaveis) Aparentemente OK
-        posicaoInicial = self.memoria.nextFit(self.numeroVariaveis)
+        posicaoInicial = self.memoria.bestFit(self.numeroVariaveis)
         print("Posicao inicial: ", posicaoInicial)
-        if (posicaoInicial == None):
+        if (posicaoInicial == None and self.tarefaB == False):
             print("Não há memoria para esse processo")
-            # Podemos escolher como fazer. Acho que a melhor forma seria mover o processo para a fila de prontos.
+            # Podemos escolher como fazer. Acho que a melhor forma seria mover o processo para a fila de bloqueados.
             self.instrucao_B(instrucao)
             self.pc -= 1
+            self.requisicao_negada += 1
             return True
-
-        else:
+        elif (posicaoInicial == None and self.tarefaB == True):
+            # não houve posição na memória e é tarefaB.
+            self.virtual = True
+            self.posicaoInicialMem = len(self.MemoriaVirtual)
+            for i in range(self.numeroVariaveis):
+                self.MemoriaVirtual.append('a')
+        else:  # posicaoInicial != None
             self.posicaoInicialMem = posicaoInicial
+            for i in range(numero_de_variaveis):
+                self.memoria.vetorMemoria[i + self.posicaoInicialMem] = 'a'
 
     def instrucao_D(self, instrucao: str):
         # Ex: Se a posicao inicial for daquele processo 0 e houverem 2 variaveis, então essas variaveis irão ocupar as posições 0+0 e 0+1 da memória
         posicao = self.posicaoInicialMem + int(instrucao[2])
         print("Posicao: ", posicao)
-        self.memoria.vetorMemoria[posicao] = 0
+        if (self.tarefaB and self.virtual):
+            self.MemoriaVirtual[posicao] = 0
+        else:  # ou não é tarefa B ou não é virtual
+            self.memoria.vetorMemoria[posicao] = 0
 
     def instrucao_V(self, instrucao: str):
         valor = int(instrucao[4:])  # O que queremos armazenar
         # Onde queremos armazenar
         posicao = self.posicaoInicialMem + int(instrucao[2])
-        self.memoria.vetorMemoria[posicao] = valor
+        if (self.tarefaB and self.virtual):
+            self.MemoriaVirtual[posicao] = valor
+        else:
+            self.memoria.vetorMemoria[posicao] = valor
 
     def instrucao_A(self, instrucao: str):
         posicao = self.posicaoInicialMem + int(instrucao[2])
         valor = int(instrucao[4:])  # Valor a ser adicionado
-        self.memoria.vetorMemoria[posicao] = self.memoria.vetorMemoria[posicao] + valor
+        if (self.tarefaB and self.virtual):
+            self.MemoriaVirtual[posicao] = self.MemoriaVirtual[posicao] + valor
+        else:
+            self.memoria.vetorMemoria[posicao] = self.memoria.vetorMemoria[posicao] + valor
 
     def instrucao_S(self, instrucao: str):
         posicao = self.posicaoInicialMem + int(instrucao[2])
         valor = int(instrucao[4:])  # Valor a ser subtraído
-        self.memoria.vetorMemoria[posicao] -= valor
+        if (self.tarefaB and self.virtual):
+            self.MemoriaVirtual[posicao] -= valor
+        else:
+            self.memoria.vetorMemoria[posicao] -= valor
+
+    # Dar uma olhada aqui dps:
 
     def instrucao_B(self, instrucao: str):
         self.bloqueados.append(self.pid)
+        posicao_inicial = len(self.Disco)
+        self.EstadoExecucao = [None]
+
+        # joga no disco e tira da memória
+        if (self.posicaoInicialMem != None and not self.virtual):
+            for i in range(self.memoria.tamMemoria):
+                if (i >= self.posicaoInicialMem and i < self.posicaoInicialMem+self.numeroVariaveis):
+                    self.Disco.append(self.memoria.vetorMemoria[i])
+                    self.memoria.vetorMemoria[i] = None
+            self.posicaoInicialMem = posicao_inicial
 
     def instrucao_T(self):
         # Deve excluir da tabela de processos
-        print('Processo terminado, Memória: ', self.memoria)
+        print('Processo terminado, Memória: ', self.memoria.vetorMemoria)
+        self.EstadoExecucao = [None]
         self.tabela_de_processos.termina_processo(self.pid)
         # Limpar a memória que ele tava usando
 
@@ -290,6 +279,7 @@ class Cpu:
         novo_processo['tempo_inicio'] = self.Tempo[0]
         novo_processo['nVariaveis'] = None
         novo_processo['posicaoInicialMem'] = None
+        novo_processo['virutal'] = False
         self.tabela_de_processos.add_processo(novo_processo)
         self.prontos.append(novo_pid)
 
@@ -327,7 +317,7 @@ class TabelaDeProcessos:
 
     def atualizar_processo(self, pid: int, pc: int, codigo: List,
                            ppid: int, prioridade: int, tempo_inicio: int, tempo_cpu: int, nVariaveis: int,
-                           posicaoInicialMem: int):
+                           posicaoInicialMem: int, virtual: bool):
         processo = self.achar_processo_pid(pid)
         if processo != None:
             processo['pc'] = pc
@@ -338,12 +328,35 @@ class TabelaDeProcessos:
             processo['prioridade'] = prioridade
             processo['tempo_inicio'] = tempo_inicio
             processo['tempo_cpu'] = tempo_cpu
+            processo['virtual'] = virtual
 
     def termina_processo(self, pid: int):
         self.processos.remove(self.achar_processo_pid(pid))
 
     def get_maior_pid(self):
         return self.maior_pid
+
+    def get_nVariaveis(self, pid: int):
+        # fazer mais protegido a erros depois
+        processo = self.achar_processo_pid(pid)
+        return processo['nVariaveis']
+
+    def set_posicaoInicialMem(self, pid: int, posicao: int):
+        processo = self.achar_processo_pid(pid)
+        processo['posicaoInicialMem'] = posicao
+
+    def get_posicaoInicialMem(self, pid: int):
+        processo = self.achar_processo_pid(pid)
+        return processo['posicaoInicialMem']
+
+    def diminui_posicao_no_disco(self, pid: int, unidades: int):
+        # recebe quantas unidades no disco a posição altera
+        processo = self.achar_processo_pid(pid)
+        processo['posicaoInicialMem'] -= unidades
+
+    def get_virtual(self, pid: int):
+        processo = self.achar_processo_pid(pid)
+        return processo['virtual']
 
 
 def gerenciador(r):
@@ -356,20 +369,23 @@ def gerenciador(r):
                                 'F 1', 'R file_d.txt', 'F 1', 'R file_e.txt', 'A 0 100', 'T']
 
     tabela_de_processos = TabelaDeProcessos()
-    memoria = Memoria()
-    memoria.iniciaMemoria()
+    mem = memoria.Memoria()
+    mem.iniciaMemoria()
+    Disco = []
+    MemoriaVirtual = []
     EstadoBloqueado = []
     EstadoPronto = []
     EstadoExecucao = [0]  # Colocar em vetor para passar como referência
     Tempo = [0]
     cpu = Cpu(EstadoBloqueado, tabela_de_processos,
-              EstadoPronto, EstadoExecucao, Tempo, memoria)
+              EstadoPronto, EstadoExecucao, Tempo, mem, Disco, MemoriaVirtual)
 
     # Ver a memoria aqui dps -> Guardar a posição de memória que ele começa e a qtde de variaveis
     tabela_de_processos.add_processo(
         {'pid': 0, 'pscodigo': codigo_primeiro_simulado,
             'pc': 0, 'ppid': None, 'prioridade': 0,
-            'tempo_inicio': Tempo[0], 'tempo_cpu': 0, 'posicaoInicialMem': None, 'nVariaveis': None}
+            'tempo_inicio': Tempo[0], 'tempo_cpu': 0, 'posicaoInicialMem': None,
+            'nVariaveis': None, 'virtual': False}
     )
     cpu.recebe_processo(deepcopy(tabela_de_processos.achar_processo_pid(0)))
     ''' Fim da inicialização das estruturas de dados'''
@@ -383,21 +399,88 @@ def gerenciador(r):
             # 3) incrementa Tempo ("Global")
             # 4) faz escalonamento: pode ou não envolver troca de contexto!
             cpu.executa()
-            print("Bloqueados: ",cpu.bloqueados)
+            print("Bloqueados: ", cpu.bloqueados)
             print("Memoria: ", cpu.memoria.vetorMemoria)
+            print("Memoria virtual: ", cpu.MemoriaVirtual)
             Tempo[0] = Tempo[0] + 1
         elif comando.decode() == 'L':
-
+            print('Disco antes: ', Disco)
+            posicao_no_disco: int
+            posicaoInicial: int
+            numero_de_variaveis: int
             # print(tabela_de_processos.processos) # Descomentar para detalhes
-            print("\nComando U")
+
             # 1) move o 1º processo da fila EstadoBloqueado para pronto
             print('EstadoBloqueado antes: ', EstadoBloqueado)
             if (len(EstadoBloqueado) > 0):
                 primeiro_da_fila = EstadoBloqueado[0]
                 EstadoPronto.append(primeiro_da_fila)
                 EstadoBloqueado.remove(primeiro_da_fila)
-            print('EstadoBloqueado depois: ', EstadoBloqueado)
+                # caso não tenha nada para passar para memória
+                if tabela_de_processos.get_posicaoInicialMem(primeiro_da_fila) != None and (not tabela_de_processos.get_virtual(primeiro_da_fila)):
+                    # Retirando do disco e passando para memoria
+                    posicao_no_disco = tabela_de_processos.get_posicaoInicialMem(
+                        primeiro_da_fila)
+                    numero_de_variaveis = tabela_de_processos.get_nVariaveis(
+                        primeiro_da_fila)
+                    posicaoInicial = mem.bestFit(numero_de_variaveis)
+                    print('PosicaoIniciao:', posicaoInicial)
+                    if (posicaoInicial == None):
+                        if not cpu.tarefaB:
+                            EstadoPronto.remove(primeiro_da_fila)
+                            EstadoBloqueado.append(primeiro_da_fila)
+                        else:
+                            posicaoInicial = len(MemoriaVirtual)
+                            tabela_de_processos.set_posicaoInicialMem(
+                                primeiro_da_fila, posicaoInicial)
+                            # passagem efetiva dos valores p/ memória virtual
+                            for i in range(numero_de_variaveis):
+                                MemoriaVirtual[posicaoInicial +
+                                               i] = Disco[posicao_no_disco + i]
 
+                            # ajeitando ids dos processos bloqueados.
+                            for pid in EstadoBloqueado:
+                                posicao = tabela_de_processos.get_posicaoInicialMem(
+                                    pid)
+                                if posicao > posicao_no_disco:
+                                    tabela_de_processos.diminui_posicao_no_disco(
+                                        pid, numero_de_variaveis)
+                            for i in range(numero_de_variaveis):
+                                del Disco[posicao_no_disco]
+
+                    else:
+                        tabela_de_processos.set_posicaoInicialMem(
+                            primeiro_da_fila, posicaoInicial)
+                        # passagem efetiva dos valores para memória
+                        for i in range(numero_de_variaveis):
+                            mem.vetorMemoria[posicaoInicial +
+                                             i] = Disco[posicao_no_disco + i]
+
+                        # Atualizando posições iniciais no disco dos processo
+                        # que continuam bloqueados, pois vai abir um gap
+                        # [1,2,3,'4','5',6] --> [1,2,3,6]
+                        for pid in EstadoBloqueado:  # cada i é um id
+                            posicao = tabela_de_processos.get_posicaoInicialMem(
+                                pid)
+                            if posicao > posicao_no_disco:
+                                tabela_de_processos.diminui_posicao_no_disco(
+                                    pid, numero_de_variaveis)
+
+                        for i in range(numero_de_variaveis):
+                            del Disco[posicao_no_disco]
+                elif tabela_de_processos.get_posicaoInicialMem(primeiro_da_fila) == None and (not tabela_de_processos.get_virtual(primeiro_da_fila)):
+                    numero_de_variaveis = tabela_de_processos.get_nVariaveis(
+                        primeiro_da_fila)
+                    posicaoInicial = mem.bestFit(numero_de_variaveis)
+                    print('PosicaoIniciao:', posicaoInicial)
+                    if (posicaoInicial == None):
+                        EstadoPronto.remove(primeiro_da_fila)
+                        EstadoBloqueado.append(primeiro_da_fila)
+
+            print('EstadoBloqueado depois: ', EstadoBloqueado)
+            if (cpu.EstadoExecucao[0] == None):
+                cpu.troca_contexto(False, True)
+            print('Disco depois: ', Disco)
             print("\nComando L")
         elif comando.decode() == 'I' or comando.decode() == 'M':
             # 1) Dispara processo impressão (cria um fork() aqui)
@@ -421,6 +504,13 @@ def gerenciador(r):
                 print('\nTempo atual do sistema: ', Tempo[0])
                 print('PID do Processo em CPU: ', cpu.pid)
                 print('Quantum do processo em CPU: ', cpu.quantum)
+                print('Memória:', mem.vetorMemoria)
+                print('Numero de fragmentos: ', mem.fragmentos())
+                print('Percentual de requisição negada: ',
+                      cpu.requisicao_negada/cpu.requisicao_memoria)
+                print('Media de alocação: ',
+                      mem.numeroNos/cpu.requisicao_memoria)
+                print('Disco: ', Disco)
                 exit()
 
         if comando.decode() == 'M':
