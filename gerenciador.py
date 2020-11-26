@@ -426,8 +426,28 @@ def gerenciador(r):
                     posicaoInicial = mem.firstFit(numero_de_variaveis)
                     print('PosicaoIniciao:', posicaoInicial)
                     if (posicaoInicial == None):
-                        EstadoPronto.remove(primeiro_da_fila)
-                        EstadoBloqueado.append(primeiro_da_fila)
+                        if not cpu.tarefaB:
+                            EstadoPronto.remove(primeiro_da_fila)
+                            EstadoBloqueado.append(primeiro_da_fila)
+                        else:
+                            posicaoInicial = len(MemoriaVirtual)
+                            tabela_de_processos.set_posicaoInicialMem(
+                                primeiro_da_fila, posicaoInicial)
+                            # passagem efetiva dos valores p/ memória virtual
+                            for i in range(numero_de_variaveis):
+                                MemoriaVirtual[posicaoInicial +
+                                               i] = Disco[posicao_no_disco + i]
+
+                            # ajeitando ids dos processos bloqueados.
+                            for pid in EstadoBloqueado:
+                                posicao = tabela_de_processos.get_posicaoInicialMem(
+                                    pid)
+                                if posicao > posicao_no_disco:
+                                    tabela_de_processos.diminui_posicao_no_disco(
+                                        pid, numero_de_variaveis)
+                            for i in range(numero_de_variaveis):
+                                del Disco[posicao_no_disco]
+
                     else:
                         tabela_de_processos.set_posicaoInicialMem(
                             primeiro_da_fila, posicaoInicial)
