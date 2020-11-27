@@ -100,6 +100,7 @@ class Cpu:
 
             print('Novo processo na cpu, PID: ',
                   processo_maior_prioridade['pid'])
+            print("Pos ini desse: ",self.posicaoInicialMem)
 
     def get_codigo_em_execucao(self):
         # Método usado em testes
@@ -120,6 +121,8 @@ class Cpu:
                 print('Nada a executar')
                 return None
         print("PC: ", self.pc)
+        print("PID: ",self.pid)
+        print("Pos inicial: ",self.posicaoInicialMem)
         instrucao: str = self.codigo_processo[self.pc]
         print('\npid na cpu: ', self.pid)
         print('instrucao: ', instrucao)
@@ -187,8 +190,8 @@ class Cpu:
         # self.memoria.append(None)
         print("Numero de variaveis: ", numero_de_variaveis)
         self.numeroVariaveis = numero_de_variaveis
-        # posicaoInicial = self.memoria.firstFit(self.numeroVariaveis) Aparentemente OK
-        posicaoInicial = self.memoria.bestFit(self.numeroVariaveis)
+        # posicaoInicial = self.memoria.nextFit(self.numeroVariaveis) Aparentemente OK
+        posicaoInicial = self.memoria.nextFit(self.numeroVariaveis)
         print("Posicao inicial: ", posicaoInicial)
         if (posicaoInicial == None and self.tarefaB == False):
             print("Não há memoria para esse processo")
@@ -343,7 +346,10 @@ class TabelaDeProcessos:
 
     def set_posicaoInicialMem(self, pid: int, posicao: int):
         processo = self.achar_processo_pid(pid)
+        print("Process: ",processo['pid'])
         processo['posicaoInicialMem'] = posicao
+        print("PPPPPPP: ",processo['posicaoInicialMem'])
+        
 
     def get_posicaoInicialMem(self, pid: int):
         processo = self.achar_processo_pid(pid)
@@ -423,8 +429,8 @@ def gerenciador(r):
                         primeiro_da_fila)
                     numero_de_variaveis = tabela_de_processos.get_nVariaveis(
                         primeiro_da_fila)
-                    posicaoInicial = mem.bestFit(numero_de_variaveis)
-                    print('PosicaoIniciao:', posicaoInicial)
+                    posicaoInicial = mem.nextFit(numero_de_variaveis)
+                    print('PosicaoInicial:', posicaoInicial)
                     if (posicaoInicial == None):
                         if not cpu.tarefaB:
                             EstadoPronto.remove(primeiro_da_fila)
@@ -449,13 +455,15 @@ def gerenciador(r):
                                 del Disco[posicao_no_disco]
 
                     else:
+                        #print("Posicao inicial mem: ",posicaoInicial)
                         tabela_de_processos.set_posicaoInicialMem(
                             primeiro_da_fila, posicaoInicial)
+                        #print("PID on CPU: ",cpu.pid)
+                        #print("Pos dps: ",cpu.posicaoInicialMem)
                         # passagem efetiva dos valores para memória
                         for i in range(numero_de_variaveis):
                             mem.vetorMemoria[posicaoInicial +
                                              i] = Disco[posicao_no_disco + i]
-
                         # Atualizando posições iniciais no disco dos processo
                         # que continuam bloqueados, pois vai abir um gap
                         # [1,2,3,'4','5',6] --> [1,2,3,6]
@@ -471,14 +479,16 @@ def gerenciador(r):
                 elif tabela_de_processos.get_posicaoInicialMem(primeiro_da_fila) == None and (not tabela_de_processos.get_virtual(primeiro_da_fila)):
                     numero_de_variaveis = tabela_de_processos.get_nVariaveis(
                         primeiro_da_fila)
-                    posicaoInicial = mem.bestFit(numero_de_variaveis)
-                    print('PosicaoIniciao:', posicaoInicial)
+                    posicaoInicial = mem.nextFit(numero_de_variaveis)
+                    print('PosicaoInicial:', posicaoInicial)
                     if (posicaoInicial == None):
                         EstadoPronto.remove(primeiro_da_fila)
                         EstadoBloqueado.append(primeiro_da_fila)
 
             print('EstadoBloqueado depois: ', EstadoBloqueado)
             if (cpu.EstadoExecucao[0] == None):
+                if (cpu.pid == primeiro_da_fila):
+                    cpu.posicaoInicialMem = tabela_de_processos.get_posicaoInicialMem(primeiro_da_fila)
                 cpu.troca_contexto(False, True)
             print('Disco depois: ', Disco)
             print("\nComando L")
