@@ -1,13 +1,13 @@
 class Memoria:
     def __init__(self):
-        self.tamMemoria: int = 15
+        self.tamMemoria: int = 9
         self.vetorMemoria: int = []
         self.flagParaNext: int = None
         self.numeroNos: int = 0
         # FILE memoria virtual -> implementar depois
 
     def iniciaMemoria(self):
-        self.vetorMemoria = [None, None]
+        self.vetorMemoria = [9, 16, None, None, 10, None, 2, 15, None]
         '''self.vetorMemoria = [None, None, None, None, None,
                              6, 7, 8, 9, 10, None, 19, 36, None, None]'''
         '''self.vetorMemoria = [None, None, None, 4, 5,

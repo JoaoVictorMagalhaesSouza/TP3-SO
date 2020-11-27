@@ -33,7 +33,7 @@ class Cpu:
         # Memória virtual
         self.MemoriaVirtual = MemoriaVirtual
         self.virtual = False
-        self.tarefaB = True
+        self.tarefaB = False
         # atributos de estatistica
         self.requisicao_memoria = 0
         self.requisicao_negada = 0
@@ -111,6 +111,7 @@ class Cpu:
     def executa(self):
         # declaracoes
         sem_memoria = False
+        print('Posicao', self.posicaoInicialMem)
         # Recebe a instrucao atual
         if len(self.tabela_de_processos.processos) == 0:
             print('Nada a executar')
@@ -468,6 +469,12 @@ def gerenciador(r):
 
                         for i in range(numero_de_variaveis):
                             del Disco[posicao_no_disco]
+
+                        '''print('POSICAO: ', tabela_de_processos.get_posicaoInicialMem(
+                            primeiro_da_fila))'''
+                        print(cpu.EstadoExecucao)
+                        print('cpu.posicaoInicialMem antes: ',
+                              cpu.posicaoInicialMem)
                 elif tabela_de_processos.get_posicaoInicialMem(primeiro_da_fila) == None and (not tabela_de_processos.get_virtual(primeiro_da_fila)):
                     numero_de_variaveis = tabela_de_processos.get_nVariaveis(
                         primeiro_da_fila)
@@ -478,9 +485,14 @@ def gerenciador(r):
                         EstadoBloqueado.append(primeiro_da_fila)
 
             print('EstadoBloqueado depois: ', EstadoBloqueado)
+            if (cpu.pid == primeiro_da_fila):
+                cpu.posicaoInicialMem = tabela_de_processos.get_posicaoInicialMem(
+                    primeiro_da_fila)
             if (cpu.EstadoExecucao[0] == None):
                 cpu.troca_contexto(False, True)
             print('Disco depois: ', Disco)
+            print('cpu.posicaoInicialMem depois: ',
+                  cpu.posicaoInicialMem)
             print("\nComando L")
         elif comando.decode() == 'I' or comando.decode() == 'M':
             # 1) Dispara processo impressão (cria um fork() aqui)
